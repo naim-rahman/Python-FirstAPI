@@ -102,3 +102,11 @@ def update_term(term_id: int, changes: NoteUpdate):
             note.update(changes.model_dump(exclude_unset=True))
             return note
     return {"message": "Term not found"}
+
+
+@app.delete("/terms/{term_id}", status_code=204)
+def delete_term(term_id: int):
+    for note in notes:
+        if note["id"] == term_id:
+            notes.remove(note)
+            return
