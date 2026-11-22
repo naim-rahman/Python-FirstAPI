@@ -1,3 +1,4 @@
+import random
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -79,6 +80,13 @@ def get_terms(tag: str | None = None, q: str | None = None):
     return result   
 
 
+@app.get("/terms/random")
+def random_term():
+    if len(notes) == 0:
+        raise HTTPException(status_code=404, detail="No terms yet!")
+    return random.choice(notes)
+
+
 @app.get("/terms/{term_id}")
 def get_term(term_id: int):
     for note in notes:
@@ -98,7 +106,7 @@ def get_term(term_id: int):
 def add_term(note: Note):
     for existing in notes:
         if existing["term"].lower() == note.term.lower():
-            raise HTTPException(status_code= 409, detail= "Term already exists")
+            raise HTTPException(status_code= 409, detail= "Term already exist!")
     new_id = 1
     for existing in notes:
         if existing["id"] >= new_id:
@@ -124,3 +132,15 @@ def delete_term(term_id: int):
         if note["id"] == term_id:
             notes.remove(note)
     raise HTTPException(status_code= 404, detail= "Term not found!")
+
+
+@app.get("/stats")
+def get_stats():
+    learned = 0
+    by_tag ={}
+    for note in notes:
+        if note["learned"]:
+            learned += 1
+        for tag in note["tags"]:
+            by_tag[tag] = by_tag.get(tag,0) +1
+    return{"total": len(notes), "learned": learned, "by_tag": by_tag}
