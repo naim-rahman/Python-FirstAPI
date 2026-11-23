@@ -120,9 +120,7 @@ def root():
 
 @app.get("/terms")
 def get_terms(
-    tag: str | None = None, 
-    q: str | None = None, 
-    learned: bool | None = None
+    tag: str | None = None, q: str | None = None, learned: bool | None = None
 ):
     result = []
     for note in notes:
@@ -141,6 +139,15 @@ def random_term():
     if len(notes) == 0:
         raise HTTPException(status_code=404, detail="No terms yet!")
     return random.choice(notes)
+
+
+@app.get("/terms/progress")
+def progress():
+    total = len(notes)
+    learned = sum(1 for note in notes if note["learned"])
+    remain = total - learned
+    percent = round(learned / total * 100) if total else 0
+    return {"Total": total, "Learned": learned, "Remain": remain, "Percent": f"{percent}%"}
 
 
 @app.get("/terms/{term_id}")
@@ -189,6 +196,28 @@ def delete_term(term_id: int):
         if note["id"] == term_id:
             notes.remove(note)
             return
+    raise HTTPException(status_code=404, detail="Term not found!")
+
+
+@app.post("/terms/{term_id}/learn")
+def mark_learned(term_id: int):
+    for note in notes:
+        if note["id"] == term_id:
+            if note["learned"]:
+                raise HTTPException(status_code=409, detail="Already learned!")
+            note["learned"] = True
+            return note
+    raise HTTPException(status_code=404, detail="Term not found!")
+
+
+@app.post("/terms/{term_id}/unlearn")
+def mark_unlearned(term_id: int):
+    for note in notes:
+        if note["id"] == term_id:
+            if not note["learned"]:
+                raise HTTPException(status_code=409, detail="Already unlearned!")
+            note["learned"] = False
+            return note
     raise HTTPException(status_code=404, detail="Term not found!")
 
 
